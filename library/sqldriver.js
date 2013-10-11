@@ -14,11 +14,21 @@ function SqlDriver() {
 	var _selects = [];
 	var _froms = [];
     var _distinct = false;
+	var _wheres = [];
+	var _whereConcat = "and";
+	var _whereConcatDefault = "and";
+	//var _whereGroupCount = 0;
+	//var _openWhereGroupCount = 0;
 	
 	SqlDriver.prototype.reset = function() {
 		_selects = [];
 		_froms = [];
         _distinct = false;
+		_wheres = [];
+		_whereConcat = "and";
+		_whereConcatDefault = "and";
+		//_whereGroupCount = 0;
+		//_openWhereGroupCount = 0;
 		return this;
 	}
 	
@@ -103,10 +113,57 @@ function SqlDriver() {
 		if (_froms.length > 0) {
 			result += "\n" + "from " + _froms.join(", ");
 		}
+		if (_wheres.length > 0) {
+			result += "\n" + "where " + _wheres.join("\n");
+		}
 		this.reset();
 		return result;
 	}
 	
+	SqlDriver.prototype.where = function(field, value) {
+		if (typeof field == "object") {
+			for (var i in field) {
+				this.where(i, field[i]);
+			}
+			return this;
+		}
+		var operator = "=";
+		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|(like|not like)|is null|is not null)$/i);
+		if (split[1] !== undefined) {
+		 	field = split[0];
+		 	operator = split[1];
+		}
+		var wrapValue = true;
+		if (value === null) {
+			value = "@null";
+		} else if (isString(value)) {
+			var first = value.substr(0, 1);
+			if (first == "@") {
+				wrapValue = false;
+				value = value.substr(1);
+			}
+		}
+
+		var sql = field + " " + operator;
+		if (value !== undefined) {
+			if (wrapValue) {
+				value = _wrap(value);
+			}
+			sql += " " + value;
+		}
+		_where(sql);
+		return this;
+	}
+
+	var _where = function(sql) {
+		var concat = "";
+		if (_wheres.length > 0) {
+			concat = (new Array(_wheres.length + 1)).join(" ") + _whereConcat + " ";
+		}
+		_whereConcat = _whereConcatDefault;
+		_wheres.push(concat + sql);
+	}
+
 	SqlDriver.prototype.endQuery = function() {
 		// TODO: endQuery function.
 	}
@@ -121,7 +178,15 @@ function SqlDriver() {
 		return query;
 	}
 
-	SqlDriver.quote = function (value, wrapInQuotes) {
+	var _wrap = function(value) {
+		if (!isNumeric(value)) {
+			value = value.replace("'", "\\'");
+			value = "'" + value + "'";	
+		}
+		return value;
+	}
+
+	var _quote = function (value, wrapInQuotes) {
 		if (isNumeric(value)) {
 			return value;
 		}
@@ -137,6 +202,8 @@ function SqlDriver() {
 			value = "'" + value + "'";
 		}
 		return value;
-	}	
+	}
+
+	SqlDriver.quote = _quote;
 	
 }

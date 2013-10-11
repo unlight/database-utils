@@ -51,6 +51,3 @@ sql[sql.length] = sqldriver
 
 
 console.log(sql);
-//for (var i in sql) {
-//	console.log(i + ". " + sql[i]);
-//}
