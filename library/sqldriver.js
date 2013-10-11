@@ -13,10 +13,12 @@ function SqlDriver() {
 	
 	var _selects = [];
 	var _froms = [];
+    var _distinct = false;
 	
 	SqlDriver.prototype.reset = function() {
 		_selects = [];
 		_froms = [];
+        _distinct = false;
 		return this;
 	}
 	
@@ -78,6 +80,9 @@ function SqlDriver() {
 	SqlDriver.prototype.getSelect = function() {
 		this.endQuery();
 		var result = "select ";
+        if (_distinct) {
+            result += "distinct ";
+        }
 		var selects = "";
 		for (var i = 0, count = _selects.length; i < count; ++i) {
 			var item = _selects[i];
