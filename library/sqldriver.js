@@ -11,28 +11,90 @@ var varType = require("useful-functions").varType;
 
 function SqlDriver() {
 	
+	var _get = "";
 	var _selects = [];
 	var _froms = [];
-    var _distinct = false;
+	var _distinct = false;
 	var _wheres = [];
 	var _whereConcat = "and";
 	var _whereConcatDefault = "and";
+	var _sets = [];
 	//var _whereGroupCount = 0;
 	//var _openWhereGroupCount = 0;
 	
 	SqlDriver.prototype.reset = function() {
+		_get = "";
 		_selects = [];
 		_froms = [];
-        _distinct = false;
+		_distinct = false;
 		_wheres = [];
 		_whereConcat = "and";
 		_whereConcatDefault = "and";
+		_sets = [];
 		//_whereGroupCount = 0;
 		//_openWhereGroupCount = 0;
 		return this;
 	}
+
+	SqlDriver.prototype.getUpdate = function() {
+		// TODO: Make me
+	}
+
+	SqlDriver.prototype.update = function() {
+		_get = "Update";
+		return this;
+	}
+
+
+	SqlDriver.prototype.insert = function() {
+		_get = "Insert";
+		return this;
+	}
+	
+
+	SqlDriver.prototype.set = function(name, value, wrapValue) {
+		if (arguments.length == 1) {
+			for (var i in name) {
+				_sets[_sets.length] = {
+					name: i,
+					value: name[i],
+					wrapValue: true
+				};
+			}
+		} else {
+			if (arguments[3] === undefined) {
+				wrapValue = true;
+			}
+			_sets.push({
+				name: name,
+				value: value,
+				wrapValue: wrapValue
+			});
+		}
+		return this;
+	}
+
+	SqlDriver.prototype.getInsert = function() {
+		// this.endQuery();
+		var table = _froms[0];
+		var result = "insert into " + table;
+		var values = [];
+		var names = [];
+		for (var i = 0, count = _sets.length; i < count; ++i) {
+			names[names.length] = _sets[i].name;
+			var value = _sets[i].value;
+			if (_sets[i].wrapValue) {
+				value = _wrap(value);
+			}
+			values[values.length] = value;
+		}
+		result += "(" + names.join(", ") + ") values(" + values.join(", ") + ")";
+		this.reset();
+		return result;
+	}
 	
 	SqlDriver.prototype.select = function(select, alias, func) {
+		_get = "Select";
 		if (arguments.length == 0) {
 			_selects.push({
 				"field": "*"
@@ -90,9 +152,9 @@ function SqlDriver() {
 	SqlDriver.prototype.getSelect = function() {
 		this.endQuery();
 		var result = "select ";
-        if (_distinct) {
-            result += "distinct ";
-        }
+		if (_distinct) {
+			result += "distinct ";
+		}
 		var selects = "";
 		for (var i = 0, count = _selects.length; i < count; ++i) {
 			var item = _selects[i];
@@ -128,10 +190,10 @@ function SqlDriver() {
 			return this;
 		}
 		var operator = "=";
-		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|(like|not like)|is null|is not null)$/i);
+		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|like|not like|is null|is not null)$/i);
 		if (split[1] !== undefined) {
-		 	field = split[0];
-		 	operator = split[1];
+			field = split[0];
+			operator = split[1];
 		}
 		var wrapValue = true;
 		if (value === null) {
@@ -173,8 +235,14 @@ function SqlDriver() {
 	}
 	
 	SqlDriver.prototype.get = function() {
-		var query = this.getSelect();
-		//throw "The selected database engine does not perform the requested task.";
+		var f = "get" + _get;
+		if (typeof this[f] != "function") {
+			throw "Error while trying to call '"+f+"' method.";
+		}
+		var query = this[f].call(this);
+
+		// TODO: Execute query or return query depends on settings.
+
 		return query;
 	}
 
