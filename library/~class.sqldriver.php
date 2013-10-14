@@ -35,21 +35,8 @@ abstract class Gdn_SQLDriver {
    
    /// PROPERTIES ///
    
-   
+ 
 
-   /**
-    * An associative array of table alias => table name pairs.
-    *
-    * @var array
-    */
-   protected $_AliasMap;
-   
-   /**
-    * The name of the class that has been instantiated.
-    *
-    * @var string
-    */
-   public $ClassName;
    
    /**
     * The database connection.
@@ -66,12 +53,6 @@ abstract class Gdn_SQLDriver {
     */
    protected $_DatabaseInfo = array();
 
-   /**
-    * A boolean value indicating if this is a distinct query.
-    *
-    * @var boolean
-    */
-   protected $_Distinct;
 
    /**
     * A collection of tables from which data is being selected.
@@ -213,34 +194,8 @@ abstract class Gdn_SQLDriver {
    //   return $Statements;
    //}
    
-   /**
-    * Concat the next where expression with an 'and' operator.
-    * <b>Note</b>: Since 'and' is the default operator to begin with this method doesn't usually have to be called,
-    * unless Gdn_DatabaseDriver::Or(FALSE) has previously been called.
-    *
-    * @param boolean $SetDefault Whether or not the 'and' is one time or sets the default operator.
-    * @return Gdn_DatabaseDriver $this
-    * @see Gdn_DatabaseDriver::OrOp()
-    */
-   public function AndOp($SetDefault = FALSE) {
-      $this->_WhereConcat = 'and';
-      if($SetDefault) {
-         $this->_WhereConcatDefault = 'and';
-      }
-      
-      return $this;
-   }
    
-   /**
-    * Begin bracketed group in the where clause to group logical expressions together.
-    *
-    * @return Gdn_DatabaseDriver $this
-    */
-   public function BeginWhereGroup() {
-      $this->_WhereGroupCount++;
-      $this->_OpenWhereGroupCount++;
-      return $this;
-   }
+   
    
    /**
     * Returns a single Condition Expression for use in a 'where' or an 'on' clause.
@@ -1444,102 +1399,11 @@ abstract class Gdn_SQLDriver {
       return $Result;
    }
    
-   public function Query($Sql) {
-      $Result = $this->Database->Query($Sql, $this->_NamedParameters);
-      $this->Reset();
-      
-      return $Result;
-   }
 
-   /**
-    * Resets properties of this object that relate to building a select
-    * statement back to their default values. Called by $this->Get() and
-    * $this->GetWhere().
-    */
-   public function Reset() {
-      // Check the _NoReset flag.
-      switch($this->_NoReset) {
-         case 1:
-            $this->_NoReset = 0;
-            return;
-         case 2:
-            return;
-      }
-      
-      $this->_Selects         = array();
-      $this->_Froms           = array();
-      $this->_Joins           = array();
-      $this->_Wheres          = array();
-      $this->_WhereConcat     = 'and';
-      $this->_WhereConcatDefault = 'and';
-      $this->_WhereGroupCount = 0;
-      $this->_OpenWhereGroupCount = 0;
-      $this->_GroupBys        = array();
-      $this->_Havings         = array();
-      $this->_OrderBys        = array();
-      $this->_AliasMap        = array();
-      
-      $this->_Distinct        = FALSE;
-      $this->_Limit           = FALSE;
-      $this->_Offset          = FALSE;
-      $this->_Order           = FALSE;
-      
-      $this->_Sets            = array();
-      $this->_NamedParameters = array();
-   }
 
-   /**
-    * Allows the specification of columns to be selected in a database query.
-    * Returns this object for chaining purposes. ie. $db->Select()->From();
-    *
-    * @param mixed $Select NotRequired "*" The field(s) being selected. It
-    * can be a comma delimited string, the name of a single field, or an array
-    * of field names.
-    * @param string $Function NotRequired "" The aggregate function to be used on
-    * the select column. Only valid if a single column name is provided.
-    * Accepted values are MAX, MIN, AVG, SUM.
-    * @param string $Alias NotRequired "" The alias to give a column name.
-    * @return this
-    */
-   public function Select($Select = '*', $Function = '', $Alias = '') {
-      if (is_string($Select)) {
-         if ($Function == '')
-            $Select = explode(',', $Select);
-         else
-            $Select = array($Select);
-      }
-      $Count = count($Select);
 
-      $i = 0;
-      for ($i = 0; $i < $Count; $i++) {
-         $Field = trim($Select[$i]);
-         
-         // Try and figure out an alias for the field.
-         if($Alias == '' || ($Count > 1 && $i > 0)) {
-            if(preg_match('/^([^\s]+)\s+(?:as\s+)?`?([^`]+)`?$/', $Field, $Matches) > 0) {
-               // This is an explicit alias in the select clause.
-               $Field = $Matches[1];
-               $Alias = $Matches[2];
-            } elseif(preg_match('/^[^\.]+\.`?([^`]+)`?$/', $Field, $Matches) > 0) {
-               // This is an alias from the field name.
-               $Alias = $Matches[1];
-            } else {
-               $Alias = '';
-            }
-            // Make sure we aren't selecting * as an alias.
-            if($Alias == '*')
-               $Alias = '';
-         }
-         
-         $Expr = array('Field' => $Field, 'Function' => $Function, 'Alias' => $Alias);
-         
-         if($Alias == '')
-            $this->_Selects[] = $Expr;
-         else
-            $this->_Selects[$Alias] = $Expr;
-      }
-      return $this;
-   }
+
+
 
    /**
     * Allows the specification of a case statement in the select list.

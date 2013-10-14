@@ -1,86 +1,341 @@
-/*
- * Generic SQL database driver
- * 
- * The Gdn_DatabaseDriver class is used
- * by any given database driver to build and execute database queries.
- *
- * This class is HEAVILY inspired by and, in places, flat out copied from
- * Garden Framework (http://vanillaforums.org). My hat is off to them.
-*/
+"use strict";
 
-function SqlDriver {
+module.exports = SqlDriver;
 
-// _AliasMap
-// ClassName
-// Database
-// _DatabaseInfo
+var isArray = require("util").isArray;
+var isNumeric = require("useful-functions").isNumeric;
+var inArray = require("useful-functions").inArray;
+var isString = require("useful-functions").isString;
+var varType = require("useful-functions").varType;
 
-	/**
-	 * The logical operator used to concatenate where clauses.
-	 * @var string
-	 */
-	var _WhereConcat;
-
-   /**
-    * The default _WhereConcat that will be reverted back to after every where clause is appended.
-    * @var string
-    */
-	var _WhereConcatDefault;
-
-   /**
-    * A boolean value indicating if this is a distinct query.
-    * @var boolean
-    */
-   var _Distinct = false;
-// 	_Froms
-// 	_GroupBys
-// 	_Havings
-// 	_Joins
-// 	_Limit
-// 	_NamedParameters
-// 	_NoReset
-// 	_Offset
-// 	_OpenWhereGroupCount
-// 	_OrderBys
-// 	_Selects
-// 	_Sets
-   
-   /**
-    * The number of where groups to open.
-    * @var int
-    */
-	var _WhereGroupCount = 0;
-   
-   /**
-    * A collection of where clauses.
-    * @var array
-    */
-   var _Wheres;
+function SqlDriver() {
 	
-}
-
-/**
- * Concat the next where expression with an 'and' operator.
- * Note: Since 'and' is the default operator to begin with this method doesn't usually have to be called,
- * unless SqlDriver.or(false) has previously been called.
- * @param  boolean            false  Whether or not the 'and' is one time or sets the default operator.
- * @return SqlDriver          this.
- */
-SqlDriver.prototype.andOp = function(setDefault) {
-	this._WhereConcat = "and";
-	if (setDefault) {
-		this._WhereConcatDefault = "and";
+	var _get = "";
+	var _selects = [];
+	var _froms = [];
+	var _distinct = false;
+	var _wheres = [];
+	var _whereConcat = "and";
+	var _whereConcatDefault = "and";
+	var _sets = [];
+	var _limit;
+	var _offset;
+	//var _whereGroupCount = 0;
+	//var _openWhereGroupCount = 0;
+	
+	SqlDriver.prototype.reset = function() {
+		_get = "";
+		_selects = [];
+		_froms = [];
+		_distinct = false;
+		_wheres = [];
+		_whereConcat = "and";
+		_whereConcatDefault = "and";
+		_sets = [];
+		_limit = undefined;
+		_offset = undefined;
+		//_whereGroupCount = 0;
+		//_openWhereGroupCount = 0;
+		return this;
 	}
-	return this;
-};
 
-   /**
-    * Begin bracketed group in the where clause to group logical expressions together.
-    *
-    * @return Gdn_DatabaseDriver $this
-    */
-SqlDriver.prototype.BeginWhereGroup = function {
-	this._WhereGroupCount++;
-	this._OpenWhereGroupCount++;
-	return this;
+	SqlDriver.prototype.execute = function() {
+		var query = this.get();
+		// TODO: These should do insert, update, delete, select. Get() returns the query.
+	}
+
+	SqlDriver.prototype.delete = function(table) {
+		_get = "Delete";
+		if (table !== undefined) {
+			_froms[_froms.length] = table;
+		}
+		return this;
+	}
+
+	SqlDriver.prototype.getDelete = function() {
+		var table = _froms[0];
+		var result = "delete " + table;
+		if (_wheres.length > 0) {
+			result += "\n" + "where " + _wheres.join("\n");
+		}
+		
+		this.reset();
+		return result;
+	}
+
+	SqlDriver.prototype.getUpdate = function() {
+		// this.endQuery();
+		var table = _froms[0];
+		var result = "update " + table + "\n" + "set ";
+		for (var i = 0, count = _sets.length; i < count; ++i) {
+			if (i > 0) {
+				result += ", ";
+			}
+			var value = _sets[i].value;
+			if (_sets[i].wrapValue) {
+				value = _wrap(value);
+			}
+			result += _sets[i].name + " = " + value;
+		}
+		if (_wheres.length > 0) {
+			result += "\n" + "where " + _wheres.join("\n");
+		}
+		this.reset();
+		return result;
+	}
+
+	SqlDriver.prototype.update = function(table) {
+		_get = "Update";
+		if (table !== undefined) {
+			_froms[_froms.length] = table;
+		}
+		return this;
+	}
+
+
+	SqlDriver.prototype.insert = function() {
+		_get = "Insert";
+		return this;
+	}
+	
+
+	SqlDriver.prototype.set = function(name, value, wrapValue) {
+		if (arguments.length == 1) {
+			for (var i in name) {
+				_sets[_sets.length] = {
+					name: i,
+					value: name[i],
+					wrapValue: true
+				};
+			}
+		} else {
+			if (arguments[3] === undefined) {
+				wrapValue = true;
+			}
+			_sets.push({
+				name: name,
+				value: value,
+				wrapValue: wrapValue
+			});
+		}
+		return this;
+	}
+
+	SqlDriver.prototype.getInsert = function() {
+		// this.endQuery();
+		var table = _froms[0];
+		var result = "insert into " + table;
+		var values = [];
+		var names = [];
+		for (var i = 0, count = _sets.length; i < count; ++i) {
+			names[names.length] = _sets[i].name;
+			var value = _sets[i].value;
+			if (_sets[i].wrapValue) {
+				value = _wrap(value);
+			}
+			values[values.length] = value;
+		}
+		result += "(" + names.join(", ") + ") values(" + values.join(", ") + ")";
+		this.reset();
+		return result;
+	}
+	
+	SqlDriver.prototype.select = function(select, alias, func) {
+		_get = "Select";
+		if (arguments.length == 0) {
+			_selects.push({
+				"field": "*"
+			});
+		} else if (arguments.length == 1) {
+			if (isString(select)) {
+				select = select.split(/\s*,\s*/);
+			}
+			for (var i = 0, count = select.length; i < count; ++i) {
+				var field = select[i].toString().trim();
+				if (field === "") continue;
+				var split = field.split(/\s*as\s*/i);
+				if (split.length > 1) {
+					field = split[0];
+					alias = split[1];
+				}
+				_selects.push({
+					"field": field,
+					"alias": alias
+				});
+			}
+		} else if (arguments.length == 2) {
+			_selects.push({
+				"field": select,
+				"alias": alias
+			});
+		} else {
+			var args = Array.prototype.slice.call(arguments);
+			func = args.shift();
+			alias = args.pop();
+			_selects.push({
+				"func": func,
+				"field": args,
+				"alias": alias
+			});
+		}
+		return this;
+	}
+	
+	SqlDriver.prototype.from = function(from) {
+		parse: {
+			if (isArray(from)) break parse;
+			if (isString(from)) {
+				from = from.split(",");
+			}
+		}
+		for (var i = 0, count = from.length; i < count; ++i) {
+			var table = from[i].toString().trim();
+			if (table === "") continue;
+			_froms.push(table);
+		}
+		return this;
+	}
+	
+	SqlDriver.prototype.getSelect = function() {
+		this.endQuery();
+		var result = "select ";
+		if (_distinct) {
+			result += "distinct ";
+		}
+		var selects = "";
+		for (var i = 0, count = _selects.length; i < count; ++i) {
+			var item = _selects[i];
+			var select = item.field;
+			if (item.func) {
+				select = item.func + "(" + select + ")";
+			}
+			if (item.alias) {
+				select = select + " as " + item.alias;
+			}
+			if (i > 0) select = ", " + select;
+			selects += select;
+		}
+		if (selects == "") {
+			selects = "*";
+		}
+		result += selects;
+		if (_froms.length > 0) {
+			result += "\n" + "from " + _froms.join(", ");
+		}
+		if (_wheres.length > 0) {
+			result += "\n" + "where " + _wheres.join("\n");
+		}
+		if (isNumeric(_limit)) {
+			result += "\n";
+			result = this.getLimit(result, _limit, _offset);
+		}
+		this.reset();
+		return result;
+	}
+	
+	SqlDriver.prototype.where = function(field, value) {
+		if (typeof field == "object") {
+			for (var i in field) {
+				this.where(i, field[i]);
+			}
+			return this;
+		}
+		var operator = "=";
+		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|like|not like|is null|is not null)$/i);
+		if (split[1] !== undefined) {
+			field = split[0];
+			operator = split[1];
+		}
+		var wrapValue = true;
+		if (value === null) {
+			value = "@null";
+		} else if (isString(value)) {
+			var first = value.substr(0, 1);
+			if (first == "@") {
+				wrapValue = false;
+				value = value.substr(1);
+			}
+		}
+
+		var sql = field + " " + operator;
+		if (value !== undefined) {
+			if (wrapValue) {
+				value = _wrap(value);
+			}
+			sql += " " + value;
+		}
+		_where(sql);
+		return this;
+	}
+
+	var _where = function(sql) {
+		var concat = "";
+		if (_wheres.length > 0) {
+			concat = (new Array(_wheres.length + 1)).join(" ") + _whereConcat + " ";
+		}
+		_whereConcat = _whereConcatDefault;
+		_wheres.push(concat + sql);
+	}
+
+	SqlDriver.prototype.limit = function(limit, offset) {
+		_limit = limit;
+		if (offset !== undefined) {
+			_offset = offset;
+		}
+		return this;
+	}
+
+	SqlDriver.prototype.offset = function(offset) {
+		_offset = offset;
+		return this;
+	}
+
+	SqlDriver.prototype.getLimit = function(sql, limit, offset) {
+		throw "Not supported.";
+	}
+
+	SqlDriver.prototype.endQuery = function() {
+		// TODO: endQuery function.
+	}
+	
+	SqlDriver.prototype.query = function() {
+		throw "Database engine is not defined.";
+	}
+	
+	SqlDriver.prototype.get = function() {
+		var f = "get" + _get;
+		if (typeof this[f] != "function") {
+			throw "Error while trying to call '"+f+"' method.";
+		}
+		return this[f].call(this);
+	}
+
+	var _wrap = function(value) {
+		if (!isNumeric(value)) {
+			value = value.replace("'", "\\'");
+			value = "'" + value + "'";	
+		}
+		return value;
+	}
+
+	var _quote = function (value, wrapInQuotes) {
+		if (isNumeric(value)) {
+			return value;
+		}
+		value = value
+			.replace("\\", "\\\\")
+			.replace("\0", "\\0")
+			.replace("\n", "\\n")
+			.replace("\r", "\\r")
+			.replace("'", "\\'")
+			.replace("\"", "\\\"")
+			.replace("\x1a", "\\Z");
+		if (wrapInQuotes === true) {
+			value = "'" + value + "'";
+		}
+		return value;
+	}
+
+	SqlDriver.quote = _quote;
+	
 }

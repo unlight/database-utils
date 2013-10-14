@@ -1,0 +1,23 @@
+{
+    "name": "database-utils",
+    "author": "S",
+    "version": "1.0.0",
+    "description": "Database utils for node.js",
+    "main": "./database-utils.js",
+    "scripts": {},
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/unlight/database-utils.git"
+    },
+    "dependencies": {
+        "useful-functions.js": "*"
+    },
+    "devDependencies": {
+        "wru": "*"
+    },
+    "keywords": [
+        "orm",
+        "database"
+    ],
+    "license": "MIT"
+}
