@@ -6,7 +6,6 @@ var isArray = require("util").isArray;
 var isNumeric = require("useful-functions").isNumeric;
 var inArray = require("useful-functions").inArray;
 var isString = require("useful-functions").isString;
-var isIterable = require("useful-functions").isIterable;
 var varType = require("useful-functions").varType;
 
 function SqlDriver() {
@@ -19,6 +18,8 @@ function SqlDriver() {
 	var _whereConcat = "and";
 	var _whereConcatDefault = "and";
 	var _sets = [];
+	var _limit;
+	var _offset;
 	//var _whereGroupCount = 0;
 	//var _openWhereGroupCount = 0;
 	
@@ -31,17 +32,63 @@ function SqlDriver() {
 		_whereConcat = "and";
 		_whereConcatDefault = "and";
 		_sets = [];
+		_limit = undefined;
+		_offset = undefined;
 		//_whereGroupCount = 0;
 		//_openWhereGroupCount = 0;
 		return this;
 	}
 
-	SqlDriver.prototype.getUpdate = function() {
-		// TODO: Make me
+	SqlDriver.prototype.execute = function() {
+		var query = this.get();
+		// TODO: These should do insert, update, delete, select. Get() returns the query.
 	}
 
-	SqlDriver.prototype.update = function() {
+	SqlDriver.prototype.delete = function(table) {
+		_get = "Delete";
+		if (table !== undefined) {
+			_froms[_froms.length] = table;
+		}
+		return this;
+	}
+
+	SqlDriver.prototype.getDelete = function() {
+		var table = _froms[0];
+		var result = "delete " + table;
+		if (_wheres.length > 0) {
+			result += "\n" + "where " + _wheres.join("\n");
+		}
+		
+		this.reset();
+		return result;
+	}
+
+	SqlDriver.prototype.getUpdate = function() {
+		// this.endQuery();
+		var table = _froms[0];
+		var result = "update " + table + "\n" + "set ";
+		for (var i = 0, count = _sets.length; i < count; ++i) {
+			if (i > 0) {
+				result += ", ";
+			}
+			var value = _sets[i].value;
+			if (_sets[i].wrapValue) {
+				value = _wrap(value);
+			}
+			result += _sets[i].name + " = " + value;
+		}
+		if (_wheres.length > 0) {
+			result += "\n" + "where " + _wheres.join("\n");
+		}
+		this.reset();
+		return result;
+	}
+
+	SqlDriver.prototype.update = function(table) {
 		_get = "Update";
+		if (table !== undefined) {
+			_froms[_froms.length] = table;
+		}
 		return this;
 	}
 
@@ -178,6 +225,10 @@ function SqlDriver() {
 		if (_wheres.length > 0) {
 			result += "\n" + "where " + _wheres.join("\n");
 		}
+		if (isNumeric(_limit)) {
+			result += "\n";
+			result = this.getLimit(result, _limit, _offset);
+		}
 		this.reset();
 		return result;
 	}
@@ -226,6 +277,23 @@ function SqlDriver() {
 		_wheres.push(concat + sql);
 	}
 
+	SqlDriver.prototype.limit = function(limit, offset) {
+		_limit = limit;
+		if (offset !== undefined) {
+			_offset = offset;
+		}
+		return this;
+	}
+
+	SqlDriver.prototype.offset = function(offset) {
+		_offset = offset;
+		return this;
+	}
+
+	SqlDriver.prototype.getLimit = function(sql, limit, offset) {
+		throw "Not supported.";
+	}
+
 	SqlDriver.prototype.endQuery = function() {
 		// TODO: endQuery function.
 	}
@@ -239,11 +307,7 @@ function SqlDriver() {
 		if (typeof this[f] != "function") {
 			throw "Error while trying to call '"+f+"' method.";
 		}
-		var query = this[f].call(this);
-
-		// TODO: Execute query or return query depends on settings.
-
-		return query;
+		return this[f].call(this);
 	}
 
 	var _wrap = function(value) {

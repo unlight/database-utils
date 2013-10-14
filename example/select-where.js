@@ -1,6 +1,7 @@
 var SqlDriver = require("./../library/sqldriver.js");
+var MySqlDriver = require("./../library/mysqldriver.js");
 
-sqldriver = new SqlDriver();
+sqldriver = new MySqlDriver();
 
 sql = [];
 
@@ -48,5 +49,18 @@ sql[sql.length] = sqldriver
 	.where("position_id", 3)
 	.get()
 
+
+sql[sql.length] = sqldriver
+	.select("user.*")
+	.from("user")
+	.limit(5)
+	.get()
+
+
+sql[sql.length] = sqldriver
+	.select("user.*")
+	.from("user")
+	.limit(5, 2)
+	.get()
 
 console.log(sql);
