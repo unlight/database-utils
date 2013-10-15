@@ -20,6 +20,7 @@ function SqlDriver() {
 	var _sets = [];
 	var _limit;
 	var _offset;
+	var _orderBys = [];
 	//var _whereGroupCount = 0;
 	//var _openWhereGroupCount = 0;
 	
@@ -34,8 +35,19 @@ function SqlDriver() {
 		_sets = [];
 		_limit = undefined;
 		_offset = undefined;
+		_orderBys = [];
 		//_whereGroupCount = 0;
 		//_openWhereGroupCount = 0;
+		return this;
+	}
+
+	SqlDriver.prototype.orderby = function(field, direction) {
+		direction = String(direction).toLowerCase();
+		if (direction != "asc") {
+			direction = "desc";
+		}
+		var orderby = field + " " + direction;
+		_orderBys[_orderBys.length] = orderby;
 		return this;
 	}
 
@@ -195,6 +207,15 @@ function SqlDriver() {
 		}
 		return this;
 	}
+
+	SqlDriver.prototype.distinct = function(value) {
+		if (typeof value == "boolean") {
+			_distinct = value;
+		} else {
+			_distinct = true;
+		}
+		return this;
+	}
 	
 	SqlDriver.prototype.getSelect = function() {
 		this.endQuery();
@@ -224,6 +245,9 @@ function SqlDriver() {
 		}
 		if (_wheres.length > 0) {
 			result += "\n" + "where " + _wheres.join("\n");
+		}
+		if (_orderBys.length > 0) {
+			result += "\n" + "order by " + _orderBys.join(", ");
 		}
 		if (isNumeric(_limit)) {
 			result += "\n";
