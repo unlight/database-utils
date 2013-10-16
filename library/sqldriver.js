@@ -3,10 +3,10 @@
 module.exports = SqlDriver;
 
 var isArray = require("util").isArray;
-var isNumeric = require("useful-functions").isNumeric;
-var inArray = require("useful-functions").inArray;
-var isString = require("useful-functions").isString;
-var varType = require("useful-functions").varType;
+var isNumeric = require("useful-functions.js").isNumeric;
+var inArray = require("useful-functions.js").inArray;
+var isString = require("useful-functions.js").isString;
+var varType = require("useful-functions.js").varType;
 
 function SqlDriver() {
 	
@@ -21,6 +21,7 @@ function SqlDriver() {
 	var _limit;
 	var _offset;
 	var _orderBys = [];
+	var _joins = [];
 	//var _whereGroupCount = 0;
 	//var _openWhereGroupCount = 0;
 	
@@ -36,9 +37,23 @@ function SqlDriver() {
 		_limit = undefined;
 		_offset = undefined;
 		_orderBys = [];
+		_joins = [];
 		//_whereGroupCount = 0;
 		//_openWhereGroupCount = 0;
 		return this;
+	}
+
+	SqlDriver.prototype.join = function(table, on, join) {
+		join = String(join);
+		if (!inArray(join, ["inner", "outer", "left", "right", "left outer", "right outer"])) {
+			join = "";
+		}
+		_joins[_joins.length] = (join + " join " + table + " on " + on).trimLeft();
+		return this;
+	}
+	
+	SqlDriver.prototype.leftjoin = function(table, on) {
+		return this.join(table, on, "left");
 	}
 
 	SqlDriver.prototype.orderby = function(field, direction) {
@@ -242,6 +257,9 @@ function SqlDriver() {
 		result += selects;
 		if (_froms.length > 0) {
 			result += "\n" + "from " + _froms.join(", ");
+		}
+		if (_joins.length > 0) {
+			result += "\n" + _joins.join("\n");
 		}
 		if (_wheres.length > 0) {
 			result += "\n" + "where " + _wheres.join("\n");
