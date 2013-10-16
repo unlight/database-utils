@@ -43,6 +43,38 @@ function SqlDriver() {
 		return this;
 	}
 
+	SqlDriver.prototype.wherenotin = function(field, values) {
+		return this.wherein(field, values, "not in");
+	}
+
+	SqlDriver.prototype.wherein = function(field, values, op) {
+		if (op === undefined) {
+			op = "in";
+		}
+		if (!isArray(values)) {
+			values = ["" + values];
+		}
+		values = values.map(function(value) {
+			return _wrap(value);
+		});
+		var value = "(" + values.join(",") + ")";
+		var where = field + " " + op + " " + value;
+		_where(where);
+		return this;
+	}
+
+	SqlDriver.prototype.getCount = function(table, where) {
+		// TODO: [hold]
+		this.reset();
+		if (table) {
+			this.from(table);	
+		}
+		if (where) {
+			this.where(where);	
+		}
+		this.select("count", "*", "RowCount")
+	}
+
 	SqlDriver.prototype.join = function(table, on, join) {
 		join = String(join);
 		if (!inArray(join, ["inner", "outer", "left", "right", "left outer", "right outer"])) {
@@ -64,6 +96,11 @@ function SqlDriver() {
 		var orderby = field + " " + direction;
 		_orderBys[_orderBys.length] = orderby;
 		return this;
+	}
+
+	SqlDriver.prototype.executeScalar = function() {
+		// TODO: return first column of first row.
+		return this.execute();
 	}
 
 	SqlDriver.prototype.execute = function() {
