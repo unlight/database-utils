@@ -5,6 +5,7 @@ Database utils for node.js
 
 TODO
 ----
+- groupby
 - between
 - collect values as parameters to 
 - [hold, need depends on execute] simple getcount
