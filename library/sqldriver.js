@@ -3,10 +3,10 @@
 module.exports = SqlDriver;
 
 var isArray = require("util").isArray;
-var isNumeric = require("useful-functions").isNumeric;
-var inArray = require("useful-functions").inArray;
-var isString = require("useful-functions").isString;
-var varType = require("useful-functions").varType;
+var isNumeric = require("useful-functions.js").isNumeric;
+var inArray = require("useful-functions.js").inArray;
+var isString = require("useful-functions.js").isString;
+var varType = require("useful-functions.js").varType;
 
 function SqlDriver() {
 	
@@ -20,6 +20,9 @@ function SqlDriver() {
 	var _sets = [];
 	var _limit;
 	var _offset;
+	var _orderBys = [];
+	var _joins = [];
+	var _groupBys = [];
 	//var _whereGroupCount = 0;
 	//var _openWhereGroupCount = 0;
 	
@@ -34,9 +37,85 @@ function SqlDriver() {
 		_sets = [];
 		_limit = undefined;
 		_offset = undefined;
+		_orderBys = [];
+		_joins = [];
+		_groupBys = [];
 		//_whereGroupCount = 0;
 		//_openWhereGroupCount = 0;
 		return this;
+	}
+
+	SqlDriver.prototype.groupby = function(fields) {
+		if (!isArray(fields)) {
+			fields = fields.toString().split(",");
+		}
+		for (var i in fields) {
+			var field = fields[i].trim();
+			if (field != "") {
+				_groupBys[_groupBys.length] = field;
+			}
+		}
+		return this;
+	}
+
+	SqlDriver.prototype.wherenotin = function(field, values) {
+		return this.wherein(field, values, "not in");
+	}
+
+	SqlDriver.prototype.wherein = function(field, values, op) {
+		if (op === undefined) {
+			op = "in";
+		}
+		if (!isArray(values)) {
+			values = ["" + values];
+		}
+		values = values.map(function(value) {
+			return _wrap(value);
+		});
+		var value = "(" + values.join(",") + ")";
+		var where = field + " " + op + " " + value;
+		_where(where);
+		return this;
+	}
+
+	SqlDriver.prototype.getCount = function(table, where) {
+		// TODO: [hold]
+		this.reset();
+		if (table) {
+			this.from(table);	
+		}
+		if (where) {
+			this.where(where);	
+		}
+		this.select("count", "*", "RowCount")
+	}
+
+	SqlDriver.prototype.join = function(table, on, join) {
+		join = String(join);
+		if (!inArray(join, ["inner", "outer", "left", "right", "left outer", "right outer"])) {
+			join = "";
+		}
+		_joins[_joins.length] = (join + " join " + table + " on " + on).trimLeft();
+		return this;
+	}
+	
+	SqlDriver.prototype.leftjoin = function(table, on) {
+		return this.join(table, on, "left");
+	}
+
+	SqlDriver.prototype.orderby = function(field, direction) {
+		direction = String(direction).toLowerCase();
+		if (direction != "asc") {
+			direction = "desc";
+		}
+		var orderby = field + " " + direction;
+		_orderBys[_orderBys.length] = orderby;
+		return this;
+	}
+
+	SqlDriver.prototype.executeScalar = function() {
+		// TODO: return first column of first row.
+		return this.execute();
 	}
 
 	SqlDriver.prototype.execute = function() {
@@ -195,6 +274,15 @@ function SqlDriver() {
 		}
 		return this;
 	}
+
+	SqlDriver.prototype.distinct = function(value) {
+		if (typeof value == "boolean") {
+			_distinct = value;
+		} else {
+			_distinct = true;
+		}
+		return this;
+	}
 	
 	SqlDriver.prototype.getSelect = function() {
 		this.endQuery();
@@ -222,8 +310,18 @@ function SqlDriver() {
 		if (_froms.length > 0) {
 			result += "\n" + "from " + _froms.join(", ");
 		}
+		if (_joins.length > 0) {
+			result += "\n" + _joins.join("\n");
+		}
 		if (_wheres.length > 0) {
 			result += "\n" + "where " + _wheres.join("\n");
+		}
+		if (_groupBys.length > 0) {
+			result += "\n";
+			result += "group by " + _groupBys.join(", ");
+		}
+		if (_orderBys.length > 0) {
+			result += "\n" + "order by " + _orderBys.join(", ");
 		}
 		if (isNumeric(_limit)) {
 			result += "\n";
