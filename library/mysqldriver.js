@@ -1,8 +1,10 @@
 "use strict";
 
 var SqlDriver = require("./sqldriver.js");
-MySqlDriver.prototype = Object.create(SqlDriver.prototype);
-MySqlDriver.prototype.constructor = MySqlDriver;
+MySqlDriver.prototype = Object.create(SqlDriver.prototype, {
+	constructor: { value: MySqlDriver }
+});
+// MySqlDriver.prototype.constructor = MySqlDriver;
 
 function MySqlDriver() {
 
