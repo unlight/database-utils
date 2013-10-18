@@ -22,6 +22,7 @@ function SqlDriver() {
 	var _offset;
 	var _orderBys = [];
 	var _joins = [];
+	var _groupBys = [];
 	//var _whereGroupCount = 0;
 	//var _openWhereGroupCount = 0;
 	
@@ -38,8 +39,22 @@ function SqlDriver() {
 		_offset = undefined;
 		_orderBys = [];
 		_joins = [];
+		_groupBys = [];
 		//_whereGroupCount = 0;
 		//_openWhereGroupCount = 0;
+		return this;
+	}
+
+	SqlDriver.prototype.groupby = function(fields) {
+		if (!isArray(fields)) {
+			fields = fields.toString().split(",");
+		}
+		for (var i in fields) {
+			var field = fields[i].trim();
+			if (field != "") {
+				_groupBys[_groupBys.length] = field;
+			}
+		}
 		return this;
 	}
 
@@ -300,6 +315,10 @@ function SqlDriver() {
 		}
 		if (_wheres.length > 0) {
 			result += "\n" + "where " + _wheres.join("\n");
+		}
+		if (_groupBys.length > 0) {
+			result += "\n";
+			result += "group by " + _groupBys.join(", ");
 		}
 		if (_orderBys.length > 0) {
 			result += "\n" + "order by " + _orderBys.join(", ");
