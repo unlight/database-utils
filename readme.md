@@ -5,6 +5,13 @@ Database utils for node.js
 
 TODO
 ----
+- %,!%,@,!@, ^% %$ for where method
+- like($field, $match = '', $side = 'both', $op = 'like')
+- replace($table = '', $set = null, $where, $checkexisting = false)
+- [hold] history($updatefields = true, $insertfields = false)
+- selectcase
+- andop, orop, beginwheregroup, endwheregroup
+- having
 - between
 - collect values as parameters to 
 - [hold, need depends on execute] simple getcount

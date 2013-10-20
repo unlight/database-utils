@@ -339,10 +339,17 @@ function SqlDriver() {
 			return this;
 		}
 		var operator = "=";
-		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|like|not like|is null|is not null)$/i);
+		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|@|!@|%|like|not like|is null|is not null)$/i);
 		if (split[1] !== undefined) {
 			field = split[0];
 			operator = split[1];
+			switch (operator) {
+				case "@": return this.wherein(field, value);
+				case "!@": return this.wherenotin(field, value);
+				case "%": return this.like(field, value, "both");
+				case "^%": return this.like(field, value, "right");
+				case "%$": return this.like(field, value, "left");
+			}
 		}
 		var wrapValue = true;
 		if (value === null) {
@@ -433,7 +440,4 @@ function SqlDriver() {
 		}
 		return value;
 	}
-
-	SqlDriver.quote = _quote;
-	
 }
