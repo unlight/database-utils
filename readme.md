@@ -5,7 +5,11 @@ Database utils for node.js
 
 TODO
 ----
-- groupby
+- notlike, like($field, $match = '', $side = 'both', $op = 'like')
+- replace($table = '', $set = null, $where, $checkexisting = false)
+- [hold] history($updatefields = true, $insertfields = false)
+- selectcase
+- having
 - between
 - collect values as parameters to 
 - [hold, need depends on execute] simple getcount

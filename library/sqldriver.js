@@ -23,8 +23,8 @@ function SqlDriver() {
 	var _orderBys = [];
 	var _joins = [];
 	var _groupBys = [];
-	//var _whereGroupCount = 0;
-	//var _openWhereGroupCount = 0;
+	var _whereGroupCount = 0;
+	var _openWhereGroupCount = 0;
 	
 	SqlDriver.prototype.reset = function() {
 		_get = "";
@@ -40,8 +40,8 @@ function SqlDriver() {
 		_orderBys = [];
 		_joins = [];
 		_groupBys = [];
-		//_whereGroupCount = 0;
-		//_openWhereGroupCount = 0;
+		_whereGroupCount = 0;
+		_openWhereGroupCount = 0;
 		return this;
 	}
 
@@ -143,7 +143,7 @@ function SqlDriver() {
 	}
 
 	SqlDriver.prototype.getUpdate = function() {
-		// this.endQuery();
+		this._endQuery();
 		var table = _froms[0];
 		var result = "update " + table + "\n" + "set ";
 		for (var i = 0, count = _sets.length; i < count; ++i) {
@@ -285,7 +285,7 @@ function SqlDriver() {
 	}
 	
 	SqlDriver.prototype.getSelect = function() {
-		this.endQuery();
+		this._endQuery();
 		var result = "select ";
 		if (_distinct) {
 			result += "distinct ";
@@ -339,10 +339,18 @@ function SqlDriver() {
 			return this;
 		}
 		var operator = "=";
-		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|like|not like|is null|is not null)$/i);
+		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|@|!@|%|like|not like|is null|is not null)$/i);
 		if (split[1] !== undefined) {
 			field = split[0];
 			operator = split[1];
+			switch (operator) {
+				case "@": return this.wherein(field, value);
+				case "!@": return this.wherenotin(field, value);
+				case "!%": return this.notlike(field, value, "both");
+				case "%": return this.like(field, value, "both");
+				case "^%": return this.like(field, value, "right");
+				case "%$": return this.like(field, value, "left");
+			}
 		}
 		var wrapValue = true;
 		if (value === null) {
@@ -369,8 +377,14 @@ function SqlDriver() {
 	var _where = function(sql) {
 		var concat = "";
 		if (_wheres.length > 0) {
-			concat = (new Array(_wheres.length + 1)).join(" ") + _whereConcat + " ";
+			concat = (new Array(_whereGroupCount + 2)).join(" ") + _whereConcat + " ";
 		}
+
+		while (_openWhereGroupCount > 0) {
+			concat += "(";
+			_openWhereGroupCount--;
+		}
+
 		_whereConcat = _whereConcatDefault;
 		_wheres.push(concat + sql);
 	}
@@ -434,6 +448,38 @@ function SqlDriver() {
 		return value;
 	}
 
-	SqlDriver.quote = _quote;
-	
+	SqlDriver.prototype.andop = function() {
+		_whereConcat = "and";
+		return this;
+	}
+
+	SqlDriver.prototype.orop = function() {
+		_whereConcat = "or";
+		return this;
+	}
+
+	SqlDriver.prototype.beginwheregroup = function() {
+		_whereGroupCount++;
+		_openWhereGroupCount++;
+		return this;
+	}
+
+	SqlDriver.prototype.endwheregroup = function() {
+		if (_whereGroupCount > 0) {
+			var whereCount = _wheres.length;
+			if (_openWhereGroupCount >= _whereGroupCount) {
+				_openWhereGroupCount--;
+			} else if (whereCount > 0) {
+				_wheres[whereCount-1] += ")";
+			}
+			_whereGroupCount--;
+		}
+		return this;
+	}
+
+	SqlDriver.prototype._endQuery = function() {
+		while (_whereGroupCount > 0) {
+			this.endwheregroup();
+		}
+	}
 }
