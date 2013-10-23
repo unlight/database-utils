@@ -5,8 +5,8 @@ Database utils for node.js
 
 TODO
 ----
-- notlike, like($field, $match = '', $side = 'both', $op = 'like')
-- replace($table = '', $set = null, $where, $checkexisting = false)
+- notlike
+- [hold, need execute] replace($table = '', $set = null, $where, $checkexisting = false)
 - [hold] history($updatefields = true, $insertfields = false)
 - selectcase
 - having
