@@ -45,6 +45,30 @@ function SqlDriver() {
 		return this;
 	}
 
+
+	SqlDriver.prototype.like = function(field, match, side, op) {
+		if (op === undefined) op = "like";
+		if (side === undefined) side = "both";
+		if (match === undefined) match = "";
+
+		switch (side) {
+			case "left": match = "%" + match; break;
+			case "right": match += "%"; break;
+			case "both": {
+				if (typeof match == "string" && match.length == 0) {
+					match = "%";
+				} else {
+					match = "%" + match + "%";
+				}
+			} break;
+			default: 
+				throw new Error("Unknown side " + side + ".");
+		}
+		var sql = field + " " + op + " " + _wrap(match);
+		_where(sql);
+		return this;
+	}
+
 	SqlDriver.prototype.groupby = function(fields) {
 		if (!isArray(fields)) {
 			fields = fields.toString().split(",");
@@ -339,7 +363,7 @@ function SqlDriver() {
 			return this;
 		}
 		var operator = "=";
-		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|@|!@|%|like|not like|is null|is not null)$/i);
+		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|@|!@|%\$|\^%|%|like|not like|is null|is not null)$/i);
 		if (split[1] !== undefined) {
 			field = split[0];
 			operator = split[1];

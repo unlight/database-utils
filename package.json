@@ -1,9 +1,9 @@
 {
     "name": "database-utils",
     "author": "S",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Database utils for node.js",
-    "main": "./database-utils.js",
+    "main": "./main.js",
     "scripts": {},
     "repository": {
         "type": "git",
@@ -19,7 +19,9 @@
         "orm",
         "database",
         "sql",
-        "mysql"
+        "mysql",
+        "sqlite",
+        "sqlbuilder"
     ],
     "license": "MIT"
 }
