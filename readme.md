@@ -9,7 +9,6 @@ TODO
 - [hold] history($updatefields = true, $insertfields = false)
 - selectcase
 - having
-- between
 - collect values as parameters to 
 - [hold, need depends on execute] simple getcount
 - [hold, need depends on execute] simple getcountlike

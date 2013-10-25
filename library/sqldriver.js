@@ -25,6 +25,7 @@ function SqlDriver() {
 	var _groupBys = [];
 	var _whereGroupCount = 0;
 	var _openWhereGroupCount = 0;
+	var _havings = [];
 	
 	SqlDriver.prototype.reset = function() {
 		_get = "";
@@ -42,6 +43,20 @@ function SqlDriver() {
 		_groupBys = [];
 		_whereGroupCount = 0;
 		_openWhereGroupCount = 0;
+		_havings = [];
+		return this;
+	}
+
+	SqlDriver.prototype.between = function(field, value, otherValue) {
+		if (otherValue === undefined) {
+			var split = (""+value).split("..");
+			if (split.length > 1) {
+				value = split[0];
+				otherValue = split[1];
+			}
+		}
+		var sql = field + " between " + _wrap(value) + " and " + _wrap(otherValue);
+		_where(sql);
 		return this;
 	}
 
@@ -103,6 +118,10 @@ function SqlDriver() {
 		var where = field + " " + op + " " + value;
 		_where(where);
 		return this;
+	}
+
+	SqlDriver.prototype.having = function() {
+
 	}
 
 	SqlDriver.prototype.getCount = function(table, where) {
