@@ -47,6 +47,25 @@ function SqlDriver() {
 		return this;
 	}
 
+	SqlDriver.prototype.selectcase = function(field, options, alias) {
+		_get = "Select";
+		var caseOptions = "";
+		for (var key in options) {
+			var value = _wrap(options[key]);
+			if (key == "") {
+				caseOptions += " else " + value;
+			} else {
+				caseOptions += " when " + key + " then " + value;
+			}
+		}
+		_selects.push({
+			"field": field,
+			"alias": alias,
+			"caseOptions": caseOptions
+		});
+		return this;
+	}
+
 	SqlDriver.prototype.between = function(field, value, otherValue) {
 		if (otherValue === undefined) {
 			var split = (""+value).split("..");
@@ -339,15 +358,17 @@ function SqlDriver() {
 		var selects = "";
 		for (var i = 0, count = _selects.length; i < count; ++i) {
 			var item = _selects[i];
-			var select = item.field;
+			var field = item.field;
 			if (item.func) {
-				select = item.func + "(" + select + ")";
+				field = item.func + "(" + field + ")";
+			} else if ("caseOptions" in item) {
+				field = "case " + field + item.caseOptions + " end";
 			}
 			if (item.alias) {
-				select = select + " as " + item.alias;
+				field = field + " as " + item.alias;
 			}
-			if (i > 0) select = ", " + select;
-			selects += select;
+			if (i > 0) field = ", " + field;
+			selects += field;
 		}
 		if (selects == "") {
 			selects = "*";
@@ -461,6 +482,9 @@ function SqlDriver() {
 	}
 	
 	SqlDriver.prototype.get = function() {
+		if (!_get) {
+			throw new Error("_get is not set.");
+		}
 		var f = "get" + _get;
 		if (typeof this[f] != "function") {
 			throw "Error while trying to call '"+f+"' method.";
