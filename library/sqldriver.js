@@ -25,6 +25,7 @@ function SqlDriver() {
 	var _groupBys = [];
 	var _whereGroupCount = 0;
 	var _openWhereGroupCount = 0;
+	var _havings = [];
 	
 	SqlDriver.prototype.reset = function() {
 		_get = "";
@@ -42,9 +43,45 @@ function SqlDriver() {
 		_groupBys = [];
 		_whereGroupCount = 0;
 		_openWhereGroupCount = 0;
+		_havings = [];
 		return this;
 	}
 
+	SqlDriver.prototype.selectcase = function(field, options, alias) {
+		_get = "Select";
+		var caseOptions = "";
+		for (var key in options) {
+			var value = _wrap(options[key]);
+			if (key == "") {
+				caseOptions += " else " + value;
+			} else {
+				caseOptions += " when " + key + " then " + value;
+			}
+		}
+		_selects.push({
+			"field": field,
+			"alias": alias,
+			"caseOptions": caseOptions
+		});
+		return this;
+	}
+
+	SqlDriver.prototype.between = function(field, value, otherValue) {
+		if (otherValue === undefined) {
+			var split = (""+value).split("..");
+			if (split.length > 1) {
+				value = split[0];
+				otherValue = split[1];
+			}
+		}
+		var sql = field + " between " + _wrap(value) + " and " + _wrap(otherValue);
+		_where(sql);
+		return this;
+	}
+
+	SqlDriver.prototype.notlike = function(field, match, side) {
+		return this.like(field, match, side, "not like");
+	}
 
 	SqlDriver.prototype.like = function(field, match, side, op) {
 		if (op === undefined) op = "like";
@@ -100,6 +137,10 @@ function SqlDriver() {
 		var where = field + " " + op + " " + value;
 		_where(where);
 		return this;
+	}
+
+	SqlDriver.prototype.having = function() {
+
 	}
 
 	SqlDriver.prototype.getCount = function(table, where) {
@@ -317,15 +358,17 @@ function SqlDriver() {
 		var selects = "";
 		for (var i = 0, count = _selects.length; i < count; ++i) {
 			var item = _selects[i];
-			var select = item.field;
+			var field = item.field;
 			if (item.func) {
-				select = item.func + "(" + select + ")";
+				field = item.func + "(" + field + ")";
+			} else if ("caseOptions" in item) {
+				field = "case " + field + item.caseOptions + " end";
 			}
 			if (item.alias) {
-				select = select + " as " + item.alias;
+				field = field + " as " + item.alias;
 			}
-			if (i > 0) select = ", " + select;
-			selects += select;
+			if (i > 0) field = ", " + field;
+			selects += field;
 		}
 		if (selects == "") {
 			selects = "*";
@@ -439,6 +482,9 @@ function SqlDriver() {
 	}
 	
 	SqlDriver.prototype.get = function() {
+		if (!_get) {
+			throw new Error("_get is not set.");
+		}
 		var f = "get" + _get;
 		if (typeof this[f] != "function") {
 			throw "Error while trying to call '"+f+"' method.";
