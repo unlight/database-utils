@@ -45,6 +45,9 @@ function SqlDriver() {
 		return this;
 	}
 
+	SqlDriver.prototype.notlike = function(field, match, side) {
+		return this.like(field, match, side, "not like");
+	}
 
 	SqlDriver.prototype.like = function(field, match, side, op) {
 		if (op === undefined) op = "like";
