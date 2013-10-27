@@ -355,7 +355,7 @@ function SqlDriver() {
 
 	SqlDriver.prototype.subQuery = function() {
 		var sql = this.get();
-		var return "(" + sql + ")";
+		return "(" + sql + ")";
 	}
 	
 	SqlDriver.prototype.getSelect = function() {
