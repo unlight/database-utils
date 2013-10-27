@@ -1,7 +1,7 @@
 {
     "name": "database-utils",
     "author": "S",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Database utils for node.js",
     "main": "./main.js",
     "scripts": {},
@@ -10,7 +10,7 @@
         "url": "https://github.com/unlight/database-utils.git"
     },
     "dependencies": {
-        "useful-functions.js": "latest"
+        "useful-functions.js": "1"
     },
     "devDependencies": {
         "wru": "latest"

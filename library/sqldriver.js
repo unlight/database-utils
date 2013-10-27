@@ -7,6 +7,7 @@ var isNumeric = require("useful-functions.js").isNumeric;
 var inArray = require("useful-functions.js").inArray;
 var isString = require("useful-functions.js").isString;
 var varType = require("useful-functions.js").varType;
+var stringEndsWith = require("useful-functions.js").stringEndsWith;
 
 function SqlDriver() {
 	
@@ -139,8 +140,11 @@ function SqlDriver() {
 		return this;
 	}
 
-	SqlDriver.prototype.having = function() {
-
+	SqlDriver.prototype.having = function(field, value) {
+		var expr = _conditionExpr(field, value);
+		var sql = expr.join(" ");
+		_havings[_havings.length] = sql;
+		return this;
 	}
 
 	SqlDriver.prototype.getCount = function(table, where) {
@@ -348,6 +352,11 @@ function SqlDriver() {
 		}
 		return this;
 	}
+
+	SqlDriver.prototype.subQuery = function() {
+		var sql = this.get();
+		var return "(" + sql + ")";
+	}
 	
 	SqlDriver.prototype.getSelect = function() {
 		this._endQuery();
@@ -384,8 +393,10 @@ function SqlDriver() {
 			result += "\n" + "where " + _wheres.join("\n");
 		}
 		if (_groupBys.length > 0) {
-			result += "\n";
-			result += "group by " + _groupBys.join(", ");
+			result += "\n" + "group by " + _groupBys.join(", ");
+		}
+		if (_havings.length > 0) {
+			result += "\n" + "having " + _havings.join("\n");
 		}
 		if (_orderBys.length > 0) {
 			result += "\n" + "order by " + _orderBys.join(", ");
@@ -397,6 +408,42 @@ function SqlDriver() {
 		this.reset();
 		return result;
 	}
+
+	var _conditionExpr = (function() {
+		var operators = [">=", "<=", "!=", "<>", ">", "<", "!@", "@", "%$", "^%", "%", "like", "not like", "is null", "is not null"];
+		return function(field, value) {
+			var operator;
+			for (var count = operators.length, i = 0; i < count; ++i) {
+				var op = operators[i];
+				if (stringEndsWith(field, op)) {
+					field = field.slice(0, -op.length).trim();
+					operator = op;
+					break;
+				}
+			}
+			if (operator === undefined) {
+				operator = "=";
+			}
+			var wrapValue = true;
+			if (value === null) {
+				value = "@null";
+			}
+			if (isString(value)) {
+				if (value.substr(0, 1) == "@") {
+					wrapValue = false;
+					value = value.substr(1);
+				}
+			}
+			var result = [field, operator];
+			if (value !== undefined) {
+				if (wrapValue) {
+					value = _wrap(value);
+				}
+				result[result.length] = value;
+			}
+			return result;
+		}
+	})();
 	
 	SqlDriver.prototype.where = function(field, value) {
 		if (typeof field == "object") {
@@ -405,38 +452,17 @@ function SqlDriver() {
 			}
 			return this;
 		}
-		var operator = "=";
-		var split = field.split(/\s*(=|<>|>|<|>=|<=|!=|@|!@|%\$|\^%|%|like|not like|is null|is not null)$/i);
-		if (split[1] !== undefined) {
-			field = split[0];
-			operator = split[1];
-			switch (operator) {
-				case "@": return this.wherein(field, value);
-				case "!@": return this.wherenotin(field, value);
-				case "!%": return this.notlike(field, value, "both");
-				case "%": return this.like(field, value, "both");
-				case "^%": return this.like(field, value, "right");
-				case "%$": return this.like(field, value, "left");
-			}
+		var expr = _conditionExpr(field, value);
+		var operator = expr[1];
+		switch (operator) {
+			case "@": return this.wherein(field, value);
+			case "!@": return this.wherenotin(field, value);
+			case "!%": return this.notlike(field, value, "both");
+			case "%": return this.like(field, value, "both");
+			case "^%": return this.like(field, value, "right");
+			case "%$": return this.like(field, value, "left");
 		}
-		var wrapValue = true;
-		if (value === null) {
-			value = "@null";
-		} else if (isString(value)) {
-			var first = value.substr(0, 1);
-			if (first == "@") {
-				wrapValue = false;
-				value = value.substr(1);
-			}
-		}
-
-		var sql = field + " " + operator;
-		if (value !== undefined) {
-			if (wrapValue) {
-				value = _wrap(value);
-			}
-			sql += " " + value;
-		}
+		var sql = expr.join(" ");
 		_where(sql);
 		return this;
 	}
@@ -446,12 +472,10 @@ function SqlDriver() {
 		if (_wheres.length > 0) {
 			concat = (new Array(_whereGroupCount + 2)).join(" ") + _whereConcat + " ";
 		}
-
 		while (_openWhereGroupCount > 0) {
 			concat += "(";
 			_openWhereGroupCount--;
 		}
-
 		_whereConcat = _whereConcatDefault;
 		_wheres.push(concat + sql);
 	}
