@@ -6,6 +6,10 @@ function SqlParameters() {
 	this.reset();
 }
 
+SqlParameters.prototype.count = function() {
+	return this._parameters.length;
+}
+
 SqlParameters.prototype.add = function(name, value) {
 	if (arguments.length == 0) {
 		throw new TypeError("Add() expecting at least 1 parameter.");
@@ -35,6 +39,6 @@ SqlParameters.prototype.values = function() {
 	return result;
 }
 
-SqlParameters.prototype.reset() {
+SqlParameters.prototype.reset = function() {
 	this._parameters = [];
 }
