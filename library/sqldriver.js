@@ -8,6 +8,7 @@ var inArray = require("useful-functions.js").inArray;
 var isString = require("useful-functions.js").isString;
 var varType = require("useful-functions.js").varType;
 var stringEndsWith = require("useful-functions.js").stringEndsWith;
+var SqlParameters = require("./sqlparameters.js");
 
 function SqlDriver() {
 	
@@ -27,6 +28,9 @@ function SqlDriver() {
 	var _whereGroupCount = 0;
 	var _openWhereGroupCount = 0;
 	var _havings = [];
+	var _isParametrized = false;
+	var _sqlParameters = new SqlParameters();
+	var _returnParameters = false;
 	
 	SqlDriver.prototype.reset = function() {
 		_get = "";
@@ -45,7 +49,21 @@ function SqlDriver() {
 		_whereGroupCount = 0;
 		_openWhereGroupCount = 0;
 		_havings = [];
+		_isParametrized = false;
 		return this;
+	}
+
+
+	SqlDriver.prototype.parameters = function() {
+		if (_sqlParameters.count() > 0) {
+			var result = _sqlParameters.values();
+			_sqlParameters.reset();
+			_isParametrized = false;
+			return result;
+		} else {
+			_isParametrized = true;
+			return this;
+		}
 	}
 
 	SqlDriver.prototype.selectcase = function(field, options, alias) {
@@ -355,7 +373,7 @@ function SqlDriver() {
 
 	SqlDriver.prototype.subQuery = function() {
 		var sql = this.get();
-		var return "(" + sql + ")";
+		return "(" + sql + ")";
 	}
 	
 	SqlDriver.prototype.getSelect = function() {
@@ -517,6 +535,10 @@ function SqlDriver() {
 	}
 
 	var _wrap = function(value) {
+		if (_isParametrized) {
+			_sqlParameters.push({value: value});
+			return "?";
+		}
 		if (!isNumeric(value)) {
 			value = value.replace("'", "\\'");
 			value = "'" + value + "'";	
