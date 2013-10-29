@@ -37,7 +37,7 @@ sql[sql.length] = sqldriver
 	.get();
 
 sql[sql.length] = sqldriver
-	.select(["id", "name"],  "concat", "concatenatedA")
+	.select("concat", ["id", "name"], "concatenatedA")
 	.from("user")
 	.get();
 

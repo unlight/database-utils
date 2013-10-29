@@ -10,6 +10,6 @@ TODO
 - [hold, need depends on execute] simple getcount
 - [hold, need depends on execute] simple getcountlike
 - [hold, need depends on execute] simple getwhere
-- unit tests
+- move examples to unit tests
 - [hold] limit in update()
 - [hold] in delete()

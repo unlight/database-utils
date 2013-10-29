@@ -1,4 +1,4 @@
 module.exports = {
-	sqldriver: require("./library/sqldriver.js"),
-	mysqldriver: require("./library/mysqldriver.js")
+	SqlDriver: require("./library/sqldriver.js"),
+	MySqlDriver: require("./library/mysqldriver.js")
 }
