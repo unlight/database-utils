@@ -314,7 +314,7 @@ function SqlDriver() {
 			});
 		} else if (arguments.length == 1) {
 			if (isString(select)) {
-				select = select.split(/\s*,\s*/);
+				select = select.split(",");
 			}
 			for (var i = 0, count = select.length; i < count; ++i) {
 				var field = select[i].toString().trim();
@@ -338,9 +338,15 @@ function SqlDriver() {
 			var args = Array.prototype.slice.call(arguments);
 			func = args.shift();
 			alias = args.pop();
+			// Do flatten array.
+			for (var i = 0, count = args.length; i < count; ++i) {
+				if (isArray(args[i])) {
+					args[i] = args[i].join(", ");
+				}
+			}
 			_selects.push({
 				"func": func,
-				"field": args,
+				"field": args.join(", "),
 				"alias": alias
 			});
 		}
