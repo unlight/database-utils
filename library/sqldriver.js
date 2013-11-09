@@ -268,15 +268,16 @@ function SqlDriver() {
 	SqlDriver.prototype.set = function(name, value, wrapValue) {
 		if (arguments.length == 1) {
 			for (var i in name) {
-				_sets[_sets.length] = {
-					name: i,
-					value: name[i],
-					wrapValue: true
-				};
+				this.set(i, name[i], true);
 			}
+			return this;
 		} else {
 			if (arguments[3] === undefined) {
 				wrapValue = true;
+			}
+			if (value === null || value === undefined) {
+				value = "null";
+				wrapValue = false;
 			}
 			_sets.push({
 				name: name,

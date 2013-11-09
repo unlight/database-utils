@@ -5,6 +5,7 @@ Database utils for node.js
 
 TODO
 ----
+- warn if _wrap is going to wrap non-string or non-object
 - [hold, need execute] replace($table = '', $set = null, $where, $checkexisting = false)
 - [hold] history($updatefields = true, $insertfields = false)
 - [hold, need depends on execute] simple getcount
