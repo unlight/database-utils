@@ -272,7 +272,7 @@ function SqlDriver() {
 			}
 			return this;
 		} else {
-			if (arguments[3] === undefined) {
+			if (arguments[2] === undefined) {
 				wrapValue = true;
 			}
 			if (value === null || value === undefined) {
