@@ -547,8 +547,9 @@ function SqlDriver() {
 			return "?";
 		}
 		if (!isNumeric(value)) {
-			value = value.replace("'", "\\'");
-			value = "'" + value + "'";	
+			value = '\'' + JSON.stringify(value).replace(/^"|"$/g, '')
+				.replace(/'/g, "\\'")
+				.replace(/\\"/g, '"') + '\'';
 		}
 		return value;
 	}
