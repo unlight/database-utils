@@ -1,7 +1,7 @@
 {
     "name": "database-utils",
     "author": "S",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "Database utils for node.js",
     "main": "./main.js",
     "scripts": {},

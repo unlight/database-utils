@@ -519,7 +519,7 @@ function SqlDriver() {
 	}
 
 	SqlDriver.prototype.getLimit = function(sql, limit, offset) {
-		throw "Not supported.";
+		throw "getLimit() not supported.";
 	}
 
 	SqlDriver.prototype.endQuery = function() {
