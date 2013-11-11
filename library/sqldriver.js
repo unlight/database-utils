@@ -480,12 +480,12 @@ function SqlDriver() {
 		var expr = _conditionExpr(field, value);
 		var operator = expr[1];
 		switch (operator) {
-			case "@": return this.wherein(field, value);
-			case "!@": return this.wherenotin(field, value);
-			case "!%": return this.notlike(field, value, "both");
-			case "%": return this.like(field, value, "both");
-			case "^%": return this.like(field, value, "right");
-			case "%$": return this.like(field, value, "left");
+			case "@": return this.wherein(field.slice(0, -1), value);
+			case "!@": return this.wherenotin(field.slice(0, -2), value);
+			case "!%": return this.notlike(field.slice(0, -2), value, "both");
+			case "%": return this.like(field.slice(0, -1), value, "both");
+			case "^%": return this.like(field.slice(0, -2), value, "right");
+			case "%$": return this.like(field.slice(0, -2), value, "left");
 		}
 		var sql = expr.join(" ");
 		_where(sql);
