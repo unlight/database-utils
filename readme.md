@@ -17,7 +17,9 @@ Example:
 
 TODO
 ----
+<<<<<<< HEAD
 - ORM
+- make new methods getQuerySql() return sql with ? getQueryParameters return place holder as array.
 - [hold, need execute] replace($table = '', $set = null, $where, $checkexisting = false)
 - [hold] history($updatefields = true, $insertfields = false)
 - [hold, need depends on execute] simple getcount
