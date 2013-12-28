@@ -541,6 +541,12 @@ function SqlDriver() {
 		return this[f].call(this);
 	}
 
+	SqlDriver.prototype.getQuery = function() {
+		var sql = this.get();
+		var parameters = this.parameters();
+		return [sql, parameters];
+	}
+
 	var _wrap = function(value) {
 		if (_isParametrized) {
 			_sqlParameters.push({value: value});

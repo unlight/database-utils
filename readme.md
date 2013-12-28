@@ -3,7 +3,7 @@ Collection of libraries to work with database
 
 Query builder
 -------------
-Example:
+Example 1:
 	```javascript
 	var sqldriver = new SqlDriver();
 	var sql = sqldriver
@@ -15,9 +15,21 @@ Example:
 	// select * from user where id = 5
 	```
 
+Example 2:
+	```javascript
+	sql = sqldriver
+		.parameters()
+		.select("*")
+		.from("user")
+		.where("id", 5)
+		.getQuerySql();
+	
+	var query = sql[0]; // select * from user where id = ?
+	var params = sql[1]; // [5]
+	```
+
 TODO
 ----
-<<<<<<< HEAD
 - ORM
 - make new methods getQuerySql() return sql with ? getQueryParameters return place holder as array.
 - [hold, need execute] replace($table = '', $set = null, $where, $checkexisting = false)
