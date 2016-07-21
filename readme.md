@@ -1,3 +1,11 @@
+# DEPRECATED
+
+DEPRECATION NOTICE.  
+This project is not maintained.
+
+This module does not follow best practice, do not use it.  
+For researches and arhceologiust only.
+
 Collection of libraries to work with database
 ---------------------------------------------
 
