@@ -1,5 +1,7 @@
 # DEPRECATED
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/unlight/database-utils.svg)](https://greenkeeper.io/)
+
 DEPRECATION NOTICE.  
 This project is not maintained.
 
